@@ -1,70 +1,55 @@
-export function startAnchor (els, Selected) {
+export function startAnchor ({doc, els, Selected}) {
+  console.log(0)
   const navContents = document.querySelectorAll(els)
   const offsetTopArr = []
   navContents.forEach(item => {
     offsetTopArr.push(item.offsetTop)
   })
-  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
-  let navIndex = 0
-  for (let n = 0; n < offsetTopArr.length; n++) {
-    if (scrollTop >= offsetTopArr[n]) {
-      navIndex = n
-    }
-  }
-  if (Selected) {
-    Selected = navIndex
+  let scrollTop = 0
+  if (doc) {
+    scrollTop = document.getElementById(doc).scrollTop
   } else {
-    return navIndex
+    scrollTop = document.documentElement.scrollTop || document.body.scrollTop
   }
-}
-export function scrollAnchor (type) {
-  window.addEventListener('scroll', startAnchor)
-}
-export function removeAnchor (type) {
-  window.removeEventListener('scroll', startAnchor)
+  offsetTopArr.map((item, index) => {
+    if (scrollTop >= (item - 1)) {
+      Selected.index = index
+    }
+  })
 }
 
-export function Anchor(binding) {
-  let total = null
-  if (binding.value == 0) {
-    total = 0
-  } else {
-    total = document.getElementById(`anchor-${binding.value}`).offsetTop
-  }
-  let distance = document.documentElement.scrollTop || document.body.scrollTop
-  let step = total / 50
-  if (total > distance) {
-    (function smoothDown() {
-      if (distance < total) {
-        distance += step;
-        document.documentElement.scrollTop = distance
-        setTimeout(smoothDown, 5)
-      } else {
-        document.documentElement.scrollTop = total
+export function routerAnchor ({doc, id}) {
+  if (!id) return
+  const anchorEl = document.getElementById(id)
+  const Anchor =  setInterval(() => {
+    if (doc) {
+      const ScrollTop = document.getElementById(doc)
+      const scrollNbr = ScrollTop.scrollTop
+      ScrollTop.scrollTop = (+scrollNbr + 30)
+      if (
+        ScrollTop.scrollTop > anchorEl.offsetTop
+        || ScrollTop.scrollTop >= (ScrollTop.scrollHeight - ScrollTop.offsetHeight - 1)
+      ) {
+        clearInterval(Anchor)
       }
-    })()
-  } else {
-    let newTotal = distance - total
-    step = newTotal / 50
-      (function smoothUp() {
-        if (distance > total) {
-          distance -= step
-          document.documentElement.scrollTop = distance
-          setTimeout(smoothUp, 5)
-        } else {
-          document.documentElement.scrollTop = total
-        }
-      })()
-  }
+    } else {
+      const scrollNbr = document.documentElement.scrollTop
+      document.documentElement.scrollTop = (+scrollNbr + 30)
+      if (
+        document.documentElement.scrollTop > anchorEl.offsetTop
+        || document.documentElement.scrollTop + window.innerHeight >= document.body.scrollHeight
+      ) {
+        clearInterval(Anchor)
+      }
+    }
+  }, 20)
 }
 
 export default {
   install: function (Vue) {
-    Vue.prototype.$sAnchor = { Anchor, startAnchor, scrollAnchor, removeAnchor }
-    Vue.directive('sAnchor', {
-      inserted: function (el, binding) {
-        el.onclick = Anchor(binding)
-      }
-    })
+    Vue.prototype.$sAnchor = {
+      routerAnchor,
+      startAnchor
+    }
   }
 }
